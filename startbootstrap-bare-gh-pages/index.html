@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel='manifest' href='./manifest.json'>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <title>3 screen app</title>
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+   <style>
+		.content {
+			display: none;
+			margin: 1em;
+		}
+    #list p {
+      border-bottom-style: solid-gray 2px;
+    }
+	</style>
+    
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">3 screen app</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#home">Home
+              <span class="sr-only">(current)</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#list">List</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#detail">Details</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12 text-center">
+        <div class ="content" id="home">
+            <h1 class="mt-5">Welcome!</h1>
+            <p class="lead">Build a new note below</p>
+          <br>
+          <input type = "text" onfocus="this.value=''" id="subject" placeholder="Enter a subject"><br>            <br>
+          <input type = "text" onfocus="this.value=''" id="date" placeholder="Enter a date"><br><br>
+          <textarea id="content" onfocus="this.value=''" placeholder="Enter content"></textarea>
+          <br>  
+          <button id="saveNote">Save</button>
+        </div>
+        <div class="content" id="list">
+          List
+        </div>
+        <div class="content" id="detail">
+          Details
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+          
+    <!-- Include Dexie -->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script>
+    var db = new Dexie("notes_db");
+    db.version(1).stores({
+      notes: "++id, subject, date"
+    });
+        
+    $(document).ready(function() {
+        $("#home").show();
+        function hideScreens() {
+          $(".content").hide();
+        }
+     
+        function loadNotesList() {
+          //clear list
+          $("#list").empty();
+          //loop through notes
+          db.notes.each(function(note) {
+            var p = $("<p>");  //creating new p element
+            p.attr("data-id", note.id);
+            p.addClass("list-note");
+            p.text(note.subject);
+            $("#list").append(p);
+          });
+        }
+
+        function loadNoteDetail(id)  {
+          $("#detail").empty();
+          //console.log(typeof(id));
+          //need to parse the id string
+          db.notes.get(parseInt(id),
+          function(note) {
+            $("#detail").append($("<h2>").text(note.subject));
+            $("#detail").append($("<p>").text(note.date));
+            $("#detail").append($("<p>").text(note.content));
+            hideScreens();
+            $("#detail").show();
+          });
+        }
+
+        $("body").on("click", ".list-note",function() {
+          //console.log($(this)); //this -> element that tiggered the event
+          loadNoteDetail($(this).attr("data-id"));
+        });
+
+        $(".nav-link").on("click", function(){
+          hideScreens();
+          var target = $(this).attr("href");
+          $(target).show();
+
+          if(target == "#list") {
+            loadNotesList();
+            //update ui
+          }
+        });
+
+      $("#saveNote").on("click",function(){
+        var subject = $("#subject").val();
+        var date = $("#date").val();
+        var content = $("#content").val();
+        db.notes.put({subject: subject, date: date, content: content});
+      })
+    });
+    </script>
+          
+    <script>
+        // register the service worker for offline use
+        if('serviceWorker' in navigator) {
+          navigator.serviceWorker
+                   .register('./sw.js')
+                   .then(function() { console.log("Service Worker Registered"); });
+        }
+    </script>
+      </div>
+    </div>
+  </div>
+    
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
